@@ -5,6 +5,7 @@
 use std::thread;
 use std::net::{TcpListener, TcpStream};
 use std::io::prelude::*;
+use std::fs::File;
 
 fn main() {
 
@@ -19,8 +20,8 @@ fn main() {
                     handle_client(stream);
                 });
             }
-            Err(e) => {
-                println!("Error processing TcpStream: {}", e);
+            Err(_) => {
+                println!("Error processing TcpStream:");
             }
         }
     }
@@ -32,7 +33,7 @@ fn handle_client(mut stream: TcpStream) {
 
     match stream.read_to_string(&mut buffer) {
         Ok(_) => {
-            println!("{}", buffer);
+            log_request(&buffer);
         },
         Err(_) => {
             println!("Could not read TcpStream");
@@ -40,4 +41,21 @@ fn handle_client(mut stream: TcpStream) {
 
     }
 
+}
+
+fn log_request(log: &String) {
+    
+    // Uncomment the following line to print log to stdout
+    //println!("{}", log);
+
+    let file = File::create("log.txt");
+    match file {
+        Ok(mut file) => {
+            let _bytes_written = file.write(log.as_bytes());
+        },
+        Err(_) => {
+            println!("Error creating log file");
+        }
+        
+    }
 }
