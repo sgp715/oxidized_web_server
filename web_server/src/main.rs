@@ -3,9 +3,10 @@
  */
 
 use std::thread;
+use std::sync::{Arc, Mutex};
 use std::net::{TcpListener, TcpStream};
 use std::io::prelude::*;
-use std::fs::File;
+use std::fs::OpenOptions;
 
 fn main() {
 
@@ -46,15 +47,21 @@ fn handle_client(mut stream: TcpStream) {
 fn log_request(log: &String) {
     
     // Uncomment the following line to print log to stdout
-    //println!("{}", log);
+    println!("{}", log);
 
-    let file = File::create("log.txt");
-    match file {
-        Ok(mut file) => {
-            let _bytes_written = file.write(log.as_bytes());
+    let arc = Arc::new(Mutex::new(OpenOptions::new()
+                                            .append(true)
+                                            .create(true)
+                                            .open("log.txt")));
+    let mutex = arc.clone();
+    let mut file = mutex.lock().unwrap();
+
+    match *file {
+        Ok(ref mut f) => {
+            let _bytes_written = f.write(log.as_bytes());
         },
         Err(_) => {
-            println!("Error creating log file");
+            println!("Error writing to log file");
         }
         
     }
