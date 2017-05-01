@@ -2,6 +2,7 @@
  * A web server implemented in Rust
  */
 
+use std::thread;
 use std::net::{TcpListener, TcpStream};
 use std::io::prelude::*;
 
@@ -14,7 +15,9 @@ fn main() {
     for stream in listener.incoming() {
         match stream {
             Ok(stream) => {
-                handle_client(stream);
+                thread::spawn(|| {
+                    handle_client(stream);
+                });
             }
             Err(e) => {
                 println!("Error processing TcpStream: {}", e);
