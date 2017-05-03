@@ -108,12 +108,13 @@ fn validate_request_format_test(){
 
 pub fn generate_response(request: &str) -> (i64, String) {
 
-    // if validate_request_format(request) == false {
-    //     return (400, "HTTP/1.0 400 Bad Request\n\n<html><body>You suck...</body></html>".to_owned())
-    // }
+    if validate_request_format(request) == false {
+        return (400, "HTTP/1.0 400 Bad Request\n\n<html><body>You suck...</body></html>".to_owned())
+    }
 
     let dir_path = env::current_dir().unwrap();
-    let filename = dir_path.to_str().unwrap().to_owned() + request.split(' ').nth(1).unwrap();
+    let file = request.split(' ').nth(1).unwrap();
+    let filename = dir_path.to_str().unwrap().to_owned() + file;
     if !Path::new(&filename).exists() {
         return (404, "HTTP/1.0 404 Not Found\n\n<html><body> Nope </body></html>".to_owned())
     }
@@ -125,10 +126,10 @@ pub fn generate_response(request: &str) -> (i64, String) {
             let size = f.read_to_string(&mut contents).unwrap();
 
             let mut text = "plain";
-            // if &filename[(&filename.len() - 5)..] == ".html" {
-            //     text = "html";
-            // }
+            let html = ".html"
+            // check the the extension is .html
 
+            // how do you pick the servername???
             let mut ok_body = format!("HTTP/1.0 200 OK\n \
                                       Content-type: text/{}\n \
                                       Content-length: {}\n \
