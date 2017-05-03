@@ -22,29 +22,6 @@ fn validate_get_format_test(){
 }
 
 
-fn validate_file_format(request: &str) -> bool {
-    let mut chars = request.chars();
-    if chars.next() == Some('/') {
-        if chars.last() == Some('/'){
-            return false;
-        }
-        else{
-            return true;
-        }
-    }
-    return false;
-}
-
-#[test]
-fn validate_file_format_test(){
-
-    assert_eq!(validate_file_format("main.rs"), false);
-    assert_eq!(validate_file_format("/main/"), false);
-    assert_eq!(validate_file_format("/main.rs/"), false);
-    assert_eq!(validate_file_format("/main.rs"), true);
-
-}
-
 fn validate_protocol_format(request: &str) -> bool {
     let reg = Regex::new(r"HTTP(\\/\d.\d|\b)").unwrap();
     reg.is_match(request)
