@@ -103,22 +103,20 @@ pub fn generate_response(request: &str) -> (i64, String, String) {
 
         if file_type.is_dir() {
 
+            println!("HERE");
             let filename_html = filename.clone() + "index.html";
+            let filename_shtml = filename.clone() + "index.shtml";
+            let filename_txt = filename.clone() + "index.txt";
+            println!("{}", filename_html);
             if Path::new(&filename_html).exists() {
                 file_served = filename_html;
-            }
-
-            let filename_shtml = filename.clone() + "index.shtml";
-            if Path::new(&filename_shtml).exists() {
+            } else if Path::new(&filename_shtml).exists() {
                 file_served = filename_shtml;
-            }
-
-            let filename_txt = filename.clone() + "index.txt";
-            if Path::new(&filename_txt).exists() {
+            } else if Path::new(&filename_txt).exists() {
                 file_served = filename_txt;
+            } else {
+                return (404, "HTTP/1.1 404 Not Found\n\n<html><body> Nope </body></html>".to_owned(), filename);
             }
-
-            return (404, "HTTP/1.1 404 Not Found\n\n<html><body> Nope </body></html>".to_owned(), filename);
 
         }
 
