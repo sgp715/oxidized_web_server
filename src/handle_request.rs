@@ -107,13 +107,14 @@ fn validate_request_format_test(){
 
 pub fn generate_response(request: &str) -> (i64, String,String) {
 
-    // if validate_request_format(request) == false {
-    //     return (400, "HTTP/1.1 400 Bad Request\n\n<html><body>You suck...</body></html>".to_owned())
-    // }
+    if validate_request_format(request) == false {
+        return (400, "HTTP/1.1 400 Bad Request\n\n<html><body>You suck...</body></html>".to_owned())
+    }
 
     let dir_path = env::current_dir().unwrap();
     let mut filename = dir_path.to_str().unwrap().to_owned() + request.split(' ').nth(1).unwrap();
     if !Path::new(&filename).exists() {
+
         filename.push_str("/index.html");
         if Path::new(&filename).exists(){
             return (200, "HTTP/1.1 200 OK\n\n<html><body>Hello, World!</body></html>".to_owned(),filename)
@@ -132,6 +133,7 @@ pub fn generate_response(request: &str) -> (i64, String,String) {
         if Path::new(&filename).exists(){
             return (200, "HTTP/1.1 200 OK\n\n<html><body>Hello, World!</body></html>".to_owned(),filename)
         }
+
         return (404, "HTTP/1.1 404 Not Found\n\n<html><body> Nope </body></html>".to_owned(), filename)
     }
 
