@@ -30,20 +30,19 @@ fn main() {
     for stream in listener.incoming() {
         match stream {
             Ok(stream) => {
+
                 let mutex = arc.clone();
                 thread::spawn(move || {
 
-                    let results = handle_client(stream);
+                    let results = handle_client(&stream);
 
                     match results {
                         Some(r) => {
 
-                            let (addr, request) = r;
-
                             let mut file = mutex.lock().unwrap();
                             match *file {
                                 Ok(ref mut f) => {
-                                    log_request(f, addr, request);
+                                    log_request(f, stream.peer_addr().unwrap(), r);
                                 },
                                 Err(_) => {
                                     println!("Error writing to file");
@@ -62,9 +61,9 @@ fn main() {
     }
 }
 
-fn handle_client(mut stream: TcpStream) -> Option<(SocketAddr, String)> {
+fn handle_client(stream: &TcpStream) -> Option<(String)> {
 
-    let mut reader = BufReader::new(&stream);
+    let mut reader = BufReader::new(stream);
     let mut request = String::new();
 
     reader.read_line(&mut request);
@@ -75,10 +74,10 @@ fn handle_client(mut stream: TcpStream) -> Option<(SocketAddr, String)> {
         }
     }
 
-    let remote_addr = stream.peer_addr().unwrap();
+    // let remote_addr = stream.peer_addr().unwrap();
     let request_type = parse_request(request);
 
-    let mut writer = BufWriter::new(&stream);
+    let mut writer = BufWriter::new(stream);
     match request_type {
         400 =>    {
             send_response(writer, "HTTP/1.1 400 Bad Request\n\n<html><body>You suck...</body></html>");
@@ -89,7 +88,7 @@ fn handle_client(mut stream: TcpStream) -> Option<(SocketAddr, String)> {
         }
     }
 
-    Some((remote_addr, "[request]".to_owned()))
+    Some("[request]".to_owned())
 
 }
 
