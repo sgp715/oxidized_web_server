@@ -98,7 +98,7 @@ fn send_response(mut writer: BufWriter<&TcpStream>, response: &str) {
 
 fn log_request(mut file: &File, addr: SocketAddr, filename: String, request: String, request_type: i64) {
 
-    let entry = format!("Time: {}, Remote IP: {}, URL:{} Status Code: {}",
+    let entry = format!("Time: {}, Remote IP: {}, URL:{} Status Code: {}\n",
                         time::now().ctime(), addr,filename, request_type);
 
     // Uncomment the following line to print log to stdout
