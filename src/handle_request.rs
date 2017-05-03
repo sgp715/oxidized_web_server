@@ -1,3 +1,4 @@
+use std::fs;
 use std::fs::metadata;
 use std::fs::File;
 use std::path::Path;
@@ -5,6 +6,7 @@ use std::env;
 extern crate regex;
 use self::regex::Regex;
 use std::io::Read;
+
 
 fn validate_get_format(request: &str) -> bool {
     if request == "GET"{
@@ -64,6 +66,25 @@ fn validate_request_format_test(){
 
 }
 
+fn generate_ok_body(mut f: File, filename: &str) -> String {
+
+    let mut contents = String::new();
+    let size = f.read_to_string(&mut contents).unwrap();
+
+    let filetype: &str;
+    if filename.to_owned().ends_with(".html") {
+        filetype = "html";
+    } else {
+        filetype = "text";
+    }
+
+    format!("HTTP/1.0 200 OK\n\
+            nsc969-web-server/0.1\n\
+            Content-type: text/{}\n\
+            Content-length: {}\n\n\
+            {}", filetype, size, contents)
+
+}
 
 pub fn generate_response(request: &str) -> (i64, String, String) {
 
@@ -73,45 +94,39 @@ pub fn generate_response(request: &str) -> (i64, String, String) {
 
     let dir_path = env::current_dir().unwrap();
     let mut filename = dir_path.to_str().unwrap().to_owned() + request.split(' ').nth(1).unwrap();
-    if !Path::new(&filename).exists() {
-        return (404, "HTTP/1.1 404 Not Found\n\n<html><body> Nope </body></html>".to_owned(), filename);
-    }
-    else {
+    println!("HERE");
+    if Path::new(&filename).exists() {
+        println!("HERE1");
 
-        // could be better
-        let filename_html = filename.clone() + "index.html";
-        if Path::new(&filename_html).exists() {
-            filename = filename_html;
+        let meta = fs::metadata(&filename).unwrap();
+        let file_type = meta.file_type();
+        
+        let mut file_served = filename.clone();
+
+        if file_type.is_dir() {
+
+            let filename_html = filename.clone() + "index.html";
+            if Path::new(&filename_html).exists() {
+                file_served = filename_html;
+            }
+
+            let filename_shtml = filename.clone() + "index.shtml";
+            if Path::new(&filename_shtml).exists() {
+                file_served = filename_shtml;
+            }
+
+            let filename_txt = filename.clone() + "index.txt";
+            if Path::new(&filename_txt).exists() {
+                file_served = filename_txt;
+            }
+
         }
 
-        let filename_shtml = filename.clone() + "index.shtml";
-        if Path::new(&filename_shtml).exists() {
-            filename = filename_shtml;
-        }
-
-        let filename_txt = filename.clone() + "index.txt";
-        if Path::new(&filename_txt).exists() {
-            filename = filename_txt;
-        }
-
-        match File::open(&filename) {
+        match File::open(&file_served) {
             Ok(mut f) => {
 
-                let mut contents = String::new();
-                let size = f.read_to_string(&mut contents).unwrap();
-
-                let filetype: &str;
-                if filename.ends_with(".html") {
-                    filetype = "html";
-                } else {
-                    filetype = "text";
-                }
-
-                let ok_body = format!("HTTP/1.0 200 OK\n\
--                                   nsc969-web-server/0.1\n\
--                                   Content-type: text/{}\n\
--                                   Content-length: {}\n\n\
--                                   {}", filetype, size, contents);
+                let ok_body = generate_ok_body(f, &file_served);
+                println!("{}", ok_body);
 
                 return (200, ok_body, filename);
 
@@ -119,8 +134,11 @@ pub fn generate_response(request: &str) -> (i64, String, String) {
             Err(_) => {
                 return (403, "HTTP/1.0 403 Forbidden\n\n<html><body> Naughty </body></html>".to_owned(), filename);
             }
+
         };
 
     }
+
+    return (404, "HTTP/1.1 404 Not Found\n\n<html><body> Nope </body></html>".to_owned(), filename);
 
 }
