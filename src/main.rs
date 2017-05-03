@@ -13,6 +13,7 @@ use std::fs::OpenOptions;
 extern crate time;
 
 use handle_request::parse_request;
+use handle_request::generate_response;
 
 mod handle_request;
 
@@ -69,26 +70,25 @@ fn handle_client(stream: &TcpStream) -> Option<(String)> {
     reader.read_line(&mut request);
 
     for line in reader.lines() {
+
         if line.unwrap() == "" {
             break;
         }
+
     }
 
     // let remote_addr = stream.peer_addr().unwrap();
-    let request_type = parse_request(request);
+    let request_type = parse_request(&request);
+    let response = generate_response(&request);
 
     let mut writer = BufWriter::new(stream);
-    match request_type {
-        400 =>    {
-            send_response(writer, "HTTP/1.1 400 Bad Request\n\n<html><body>You suck...</body></html>");
-            return None
-        },
-        _ => {
-            send_response(writer, "HTTP/1.1 200 OK\n\n<html><body>Hello, World!</body></html>");
-        }
+    send_response(writer, &response);
+
+    if request_type == 400 {
+        return None
     }
 
-    Some("[request]".to_owned())
+    Some(request)
 
 }
 
