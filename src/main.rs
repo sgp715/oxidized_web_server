@@ -33,23 +33,28 @@ fn main() {
                 thread::spawn(move || {
 
                     let results = handle_client(stream);
+
                     match results {
-                        Ok(_) => println!("Generated response");,
-                        _ => continue
-                    };
+                        
+                        Some(r) => {
 
-                    // figurue out how to send response
-                    response = results.2;
+                            let (addr, request, response) = r;
 
-                    let mut file = mutex.lock().unwrap();
-                    match *file {
-                        Ok(ref mut f) => {
-                            log_request(f, results.0, results.1);
+                            // figurue out how to send response
+                            // some concurrent stuff
+
+                            let mut file = mutex.lock().unwrap();
+                            match *file {
+                                Ok(ref mut f) => {
+                                    log_request(f, addr, response);
+                                },
+                                Err(_) => {
+                                    println!("Error writing to file");
+                                }
+                            }
                         },
-                        Err(_) => {
-                            println!("Error writing to file");
-                        }
-                    }
+                        _ => print!("Bad request")
+                    };
                 });
             }
             Err(_) => {
@@ -72,17 +77,17 @@ fn handle_client(mut stream: TcpStream) -> Option<(SocketAddr, String, String)> 
         },
     }
 
-    // println!("Buffer: {}", buffer);
-    let (type, request) = parse_request(buffer);
+    let (request_type, request) = parse_request(buffer);
 
-    match type {
+    match request_type {
         400 =>  { return None },
         _ =>    { println!("Valid request!") }
     }
 
     let remote_addr = stream.peer_addr().unwrap();
 
-    (remote_addr, "[request]".to_owned(), "[response]".to_owned())
+    Some((remote_addr, "[request]".to_owned(), "[response]".to_owned()))
+
 }
 
 fn log_request(mut file: &File, addr: SocketAddr, request: String) {

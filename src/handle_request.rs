@@ -1,5 +1,5 @@
-pub fn parse_request(request: String) -> (String, i64) {
+pub fn parse_request(request: String) -> (i64, String) {
 
-    ("[type]".to_owned(), "[requset]")
+    (400, "[request]".to_owned())
 
 }
