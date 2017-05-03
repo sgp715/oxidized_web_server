@@ -4,6 +4,7 @@ use std::path::Path;
 use std::env;
 extern crate regex;
 use self::regex::Regex;
+use std::io::Read;
 
 fn validate_get_format(request: &str) -> bool {
     if request == "GET"{
@@ -65,7 +66,7 @@ fn validate_protocol_format_test(){
 fn validate_request_format(request: &str) -> bool {
     let segments: Vec<&str> = request.split(' ').collect();
     if segments.len() == 3{
-        if validate_get_format(segments[0])&&validate_file_format(segments[1])&&validate_protocol_format(segments[2]){
+        if validate_get_format(segments[0])&&validate_protocol_format(segments[2]){
             return true;
         }
     }
@@ -96,40 +97,53 @@ pub fn generate_response(request: &str) -> (i64, String, String) {
     let dir_path = env::current_dir().unwrap();
     let mut filename = dir_path.to_str().unwrap().to_owned() + request.split(' ').nth(1).unwrap();
     if !Path::new(&filename).exists() {
-
-        filename.push_str("/index.html");
-        if Path::new(&filename).exists(){
-            return (200, "HTTP/1.1 200 OK\n\n<html><body>Hello, World!</body></html>".to_owned(),filename)
-        }
-        let mut length = filename.len();
-        filename.truncate(length-11);
-        filename.push_str("/sindex.html");
-
-        if Path::new(&filename).exists(){
-            return (200, "HTTP/1.1 200 OK\n\n<html><body>Hello, World!</body></html>".to_owned(),filename)
-        }
-        let mut length = filename.len();
-        filename.truncate(length-12);
-        filename.push_str("/index.txt");
-
-        if Path::new(&filename).exists(){
-            return (200, "HTTP/1.1 200 OK\n\n<html><body>Hello, World!</body></html>".to_owned(),filename)
-        }
-
-        return (404, "HTTP/1.1 404 Not Found\n\n<html><body> Nope </body></html>".to_owned(), filename)
+        return (404, "HTTP/1.1 404 Not Found\n\n<html><body> Nope </body></html>".to_owned(), filename);
     }
+    else {
 
-    // let mut file = File::open(filename).unwrap();
-    // println!("file: {}", file.is_file());
-    // let mut contents = String::new();
+        // could be better
+        let filename_html = filename.clone() + "index.html";
+        if Path::new(&filename_html).exists() {
+            filename = filename_html;
+        }
 
-    // match file {
-    //     Ok(f) => f.read_to_string(&mut contents),
-    //     Err(_) => {
-    //         println!("Could not find file");
-    //     }
-    // }
+        let filename_shtml = filename.clone() + "index.shtml";
+        if Path::new(&filename_shtml).exists() {
+            filename = filename_shtml;
+        }
 
-    (200, "HTTP/1.1 200 OK\n\n<html><body>Hello, World!</body></html>".to_owned(),filename)
+        let filename_txt = filename.clone() + "index.txt";
+        if Path::new(&filename_txt).exists() {
+            filename = filename_txt;
+        }
+
+        match File::open(&filename) {
+            Ok(mut f) => {
+
+                let mut contents = String::new();
+                let size = f.read_to_string(&mut contents).unwrap();
+
+                let filetype: &str;
+                if filename.ends_with(".html") {
+                    filetype = "html";
+                } else {
+                    filetype = "text";
+                }
+
+                let ok_body = format!("HTTP/1.0 200 OK\n\
+-                                   nsc969-web-server/0.1\n\
+-                                   Content-type: text/{}\n\
+-                                   Content-length: {}\n\n\
+-                                   {}", filetype, size, contents);
+
+                return (200, ok_body, filename);
+
+            },
+            Err(_) => {
+                return (403, "HTTP/1.0 403 Forbidden\n\n<html><body> Naughty </body></html>".to_owned(), filename);
+            }
+        };
+
+    }
 
 }
