@@ -34,7 +34,7 @@ fn main() {
                 let mutex = arc.clone();
                 thread::spawn(move || {
 
-                    let results = handle_client(&stream);
+                    let (request_type, results,filename) = handle_client(&stream);
 
                     match results {
                         Some(r) => {
@@ -42,7 +42,7 @@ fn main() {
                             let mut file = mutex.lock().unwrap();
                             match *file {
                                 Ok(ref mut f) => {
-                                    log_request(f, stream.peer_addr().unwrap(), r);
+                                    log_request(f, stream.peer_addr().unwrap(),filename, r,request_type);
                                 },
                                 Err(_) => {
                                     println!("Error writing to file");
@@ -61,7 +61,7 @@ fn main() {
     }
 }
 
-fn handle_client(stream: &TcpStream) -> Option<(String)> {
+fn handle_client(stream: &TcpStream) -> (i64,Option<(String)>,String) {
 
     let mut reader = BufReader::new(stream);
     let mut request = String::new();
@@ -77,16 +77,16 @@ fn handle_client(stream: &TcpStream) -> Option<(String)> {
     }
 
     // let remote_addr = stream.peer_addr().unwrap();
-    let (request_type, response) = generate_response(&request);
+    let (request_type, response, filename) = generate_response(&request);
 
     let writer = BufWriter::new(stream);
     send_response(writer, &response);
 
     if request_type == 400 {
-        return None
+        return (request_type, None, filename)
     }
 
-    Some(request)
+    (request_type,Some(request),filename)
 
 }
 
@@ -96,10 +96,10 @@ fn send_response(mut writer: BufWriter<&TcpStream>, response: &str) {
 
 }
 
-fn log_request(mut file: &File, addr: SocketAddr, request: String) {
+fn log_request(mut file: &File, addr: SocketAddr, filename: String, request: String, request_type: i64) {
 
-    let entry = format!("Time: {}, Remote IP: {}, Request: {}",
-                        time::now().ctime(), addr, request);
+    let entry = format!("Time: {}, Remote IP: {}, URL:{} Status Code: {}",
+                        time::now().ctime(), addr,filename, request_type);
 
     // Uncomment the following line to print log to stdout
     //println!("{}", entry);

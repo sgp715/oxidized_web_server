@@ -1,10 +1,7 @@
+use std::fs::metadata;
 use std::fs::File;
 use std::path::Path;
 use std::env;
-use std::io::Read;
-extern crate regex;
-use self::regex::Regex;
-
 
 fn validate_get_format(request: &str) -> bool {
     if request == "GET"{
@@ -46,9 +43,27 @@ fn validate_file_format_test(){
 }
 
 fn validate_protocol_format(request: &str) -> bool {
-
-    let reg = Regex::new(r"HTTP(\\/\d.\d|\b)").unwrap();
-    reg.is_match(request)
+    let mut chars = request.chars().peekable();
+    if chars.next() ==Some('H')&&chars.next()==Some('T')&&chars.next()==Some('T')&&chars.next()==Some('P'){
+        if chars.peek()==None{
+            return true;
+        }
+        if chars.next() == Some('/'){
+            if chars.peek() ==Some(&'0'){
+                chars.next();
+                if chars.next() ==Some('.')&&chars.next()==Some('9'){
+                    return true;
+                }
+            }
+            else if chars.peek() == Some(&'1'){
+                chars.next();
+                if chars.next() ==Some('.')&&(chars.peek()==Some(&'0')||chars.peek()==Some(&'1')){
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
 }
 
 #[test]
@@ -56,12 +71,13 @@ fn validate_protocol_format_test(){
 
     assert_eq!(validate_protocol_format("HTT"), false);
     assert_eq!(validate_protocol_format("HTTp"), false);
+    assert_eq!(validate_protocol_format("HTTP/"), false);
     assert_eq!(validate_protocol_format("HTTP/1.1"), true);
     assert_eq!(validate_protocol_format("HTTP/1.0"), true);
     assert_eq!(validate_protocol_format("HTTP/0.9"), true);
     assert_eq!(validate_protocol_format("HTTP/0.8"), false);
     assert_eq!(validate_protocol_format("HTTP"), true);
-    assert_eq!(validate_protocol_format("HTTP\r\n"), true);
+
 }
 
 fn validate_request_format(request: &str) -> bool {
@@ -89,44 +105,29 @@ fn validate_request_format_test(){
 }
 
 
-pub fn generate_response(request: &str) -> (i64, String) {
+pub fn generate_response(request: &str) -> (i64, String,String) {
 
-    if validate_request_format(request) == false {
-        return (400, "HTTP/1.0 400 Bad Request\r\n<html><body>Very bad...</body></html>".to_owned())
-    }
+    // if validate_request_format(request) == false {
+    //     return (400, "HTTP/1.1 400 Bad Request\n\n<html><body>You suck...</body></html>".to_owned())
+    // }
 
     let dir_path = env::current_dir().unwrap();
-    let file = request.split(' ').nth(1).unwrap();
-    let filename = dir_path.to_str().unwrap().to_owned() + file;
+    let filename = dir_path.to_str().unwrap().to_owned() + request.split(' ').nth(1).unwrap();
     if !Path::new(&filename).exists() {
-        return (404, "HTTP/1.0 404 Not Found\r\n<html><body>Nope</body></html>".to_owned())
+        return (404, "HTTP/1.1 404 Not Found\n\n<html><body> Nope </body></html>".to_owned(), filename)
     }
 
-    match File::open(filename) {
-        Ok(mut f) => {
+    // let mut file = File::open(filename).unwrap();
+    // println!("file: {}", file.is_file());
+    // let mut contents = String::new();
 
-            let mut contents = String::new();
-            let size = f.read_to_string(&mut contents).unwrap();
+    // match file {
+    //     Ok(f) => f.read_to_string(&mut contents),
+    //     Err(_) => {
+    //         println!("Could not find file");
+    //     }
+    // }
 
-            let filetype: &str;
-            if file.ends_with(".html") {
-                filetype = "html";
-            } else {
-                filetype = "text";
-            }
-
-            let ok_body = format!("HTTP/1.0 200 OK\n\
-                                   nsc969-web-server/0.1\n\
-                                   Content-type: text/{}\n\
-                                   Content-length: {}\n\n\
-                                   {}", filetype, size, contents);
-
-            return (200, ok_body);
-
-        },
-        Err(_) => {
-            return (403, "HTTP/1.0 403 Forbidden\r\n<html><body> Naughty </body></html>".to_owned());
-        }
-    };
+    (200, "HTTP/1.1 200 OK\n\n<html><body>Hello, World!</body></html>".to_owned(),filename)
 
 }
