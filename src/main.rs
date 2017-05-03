@@ -102,7 +102,7 @@ fn log_request(mut file: &File, addr: SocketAddr, filename: String, request: Str
                         time::now().ctime(), addr,filename, request_type);
 
     // Uncomment the following line to print log to stdout
-    //println!("{}", entry);
+    println!("{}", entry);
 
     let _bytes_written = file.write(entry.as_bytes());
 }

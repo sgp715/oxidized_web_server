@@ -112,8 +112,26 @@ pub fn generate_response(request: &str) -> (i64, String,String) {
     // }
 
     let dir_path = env::current_dir().unwrap();
-    let filename = dir_path.to_str().unwrap().to_owned() + request.split(' ').nth(1).unwrap();
+    let mut filename = dir_path.to_str().unwrap().to_owned() + request.split(' ').nth(1).unwrap();
     if !Path::new(&filename).exists() {
+        filename.push_str("/index.html");
+        if Path::new(&filename).exists(){
+            return (200, "HTTP/1.1 200 OK\n\n<html><body>Hello, World!</body></html>".to_owned(),filename)
+        }
+        let mut length = filename.len();
+        filename.truncate(length-11);
+        filename.push_str("/sindex.html");
+
+        if Path::new(&filename).exists(){
+            return (200, "HTTP/1.1 200 OK\n\n<html><body>Hello, World!</body></html>".to_owned(),filename)
+        }
+        let mut length = filename.len();
+        filename.truncate(length-12);
+        filename.push_str("/index.txt");
+
+        if Path::new(&filename).exists(){
+            return (200, "HTTP/1.1 200 OK\n\n<html><body>Hello, World!</body></html>".to_owned(),filename)
+        }
         return (404, "HTTP/1.1 404 Not Found\n\n<html><body> Nope </body></html>".to_owned(), filename)
     }
 
