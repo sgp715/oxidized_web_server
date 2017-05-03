@@ -1,5 +1,4 @@
 use std::fs;
-use std::fs::metadata;
 use std::fs::File;
 use std::path::Path;
 use std::env;
@@ -93,7 +92,7 @@ pub fn generate_response(request: &str) -> (i64, String, String) {
     }
 
     let dir_path = env::current_dir().unwrap();
-    let mut filename = dir_path.to_str().unwrap().to_owned() + request.split(' ').nth(1).unwrap();
+    let filename = dir_path.to_str().unwrap().to_owned() + request.split(' ').nth(1).unwrap();
     if Path::new(&filename).exists() {
 
         let meta = fs::metadata(&filename).unwrap();
@@ -121,7 +120,7 @@ pub fn generate_response(request: &str) -> (i64, String, String) {
         }
 
         match File::open(&file_served) {
-            Ok(mut f) => {
+            Ok(f) => {
 
                 let ok_body = generate_ok_body(f, &file_served);
                 println!("{}", ok_body);

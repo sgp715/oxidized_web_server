@@ -37,12 +37,12 @@ fn main() {
                     let (request_type, results,filename) = handle_client(&stream);
 
                     match results {
-                        Some(r) => {
+                        Some(_) => {
 
                             let mut file = mutex.lock().unwrap();
                             match *file {
                                 Ok(ref mut f) => {
-                                    log_request(f, stream.peer_addr().unwrap(),filename, r,request_type);
+                                    log_request(f, stream.peer_addr().unwrap(),filename, request_type);
                                 },
                                 Err(_) => {
                                     println!("Error writing to file");
@@ -96,7 +96,7 @@ fn send_response(mut writer: BufWriter<&TcpStream>, response: &str) {
 
 }
 
-fn log_request(mut file: &File, addr: SocketAddr, filename: String, request: String, request_type: i64) {
+fn log_request(mut file: &File, addr: SocketAddr, filename: String, request_type: i64) {
 
     let entry = format!("Time: {}, Remote IP: {}, URL:{} Status Code: {}\n",
                         time::now().ctime(), addr,filename, request_type);
