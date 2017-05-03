@@ -1,3 +1,8 @@
+use std::fs::metadata;
+use std::fs::File;
+use std::path::Path;
+use std::env;
+
 fn validate_get_format(request: &str) -> bool {
     false
 }
@@ -63,9 +68,26 @@ fn validate_request_format_test(){
 
 pub fn generate_response(request: &str) -> (i64, String) {
 
-    if validate_request_format(request) == false {
-        return (400, "HTTP/1.1 400 Bad Request\n\n<html><body>You suck...</body></html>".to_owned())
+    // if validate_request_format(request) == false {
+    //     return (400, "HTTP/1.1 400 Bad Request\n\n<html><body>You suck...</body></html>".to_owned())
+    // }
+
+    let dir_path = env::current_dir().unwrap();
+    let filename = dir_path.to_str().unwrap().to_owned() + request.split(' ').nth(1).unwrap();
+    if !Path::new(&filename).exists() {
+        return (404, "HTTP/1.1 404 Not Found\n\n<html><body> Nope </body></html>".to_owned())
     }
+
+    // let mut file = File::open(filename).unwrap();
+    // println!("file: {}", file.is_file());
+    // let mut contents = String::new();
+
+    // match file {
+    //     Ok(f) => f.read_to_string(&mut contents),
+    //     Err(_) => {
+    //         println!("Could not find file");
+    //     }
+    // }
 
     (200, "HTTP/1.1 200 OK\n\n<html><body>Hello, World!</body></html>".to_owned())
 
