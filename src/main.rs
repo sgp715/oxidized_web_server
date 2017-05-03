@@ -3,6 +3,7 @@
  */
 
 use std::thread;
+use std::io::{BufReader, BufWriter};
 use std::sync::{Arc, Mutex};
 use std::net::{SocketAddr, TcpStream, TcpListener};
 use std::io::prelude::*;
@@ -35,23 +36,20 @@ fn main() {
                     let results = handle_client(stream);
 
                     match results {
-                        
                         Some(r) => {
 
-                            let (addr, request, response) = r;
-
-                            // figurue out how to send response
-                            // some concurrent stuff
+                            let (addr, request) = r;
 
                             let mut file = mutex.lock().unwrap();
                             match *file {
                                 Ok(ref mut f) => {
-                                    log_request(f, addr, response);
+                                    log_request(f, addr, request);
                                 },
                                 Err(_) => {
                                     println!("Error writing to file");
                                 }
                             }
+
                         },
                         _ => print!("Bad request")
                     };
@@ -64,29 +62,40 @@ fn main() {
     }
 }
 
-fn handle_client(mut stream: TcpStream) -> Option<(SocketAddr, String, String)> {
+fn handle_client(mut stream: TcpStream) -> Option<(SocketAddr, String)> {
 
-    let mut buffer = String::new();
+    let mut reader = BufReader::new(&stream);
+    let mut request = String::new();
 
-    match stream.read_to_string(&mut buffer) {
-        Ok(_) => {
-            println!("Handling client");
-        },
-        Err(_) => {
-            println!("Could not read TcpStream");
-        },
-    }
+    reader.read_line(&mut request);
 
-    let (request_type, request) = parse_request(buffer);
-
-    match request_type {
-        400 =>  { return None },
-        _ =>    { println!("Valid request!") }
+    for line in reader.lines() {
+        if line.unwrap() == "" {
+            break;
+        }
     }
 
     let remote_addr = stream.peer_addr().unwrap();
+    let request_type = parse_request(request);
 
-    Some((remote_addr, "[request]".to_owned(), "[response]".to_owned()))
+    let mut writer = BufWriter::new(&stream);
+    match request_type {
+        400 =>    {
+            send_response(writer, "HTTP/1.1 400 Bad Request\n\n<html><body>You suck...</body></html>");
+            return None
+        },
+        _ => {
+            send_response(writer, "HTTP/1.1 200 OK\n\n<html><body>Hello, World!</body></html>");
+        }
+    }
+
+    Some((remote_addr, "[request]".to_owned()))
+
+}
+
+fn send_response(mut writer: BufWriter<&TcpStream>, response: &str) {
+
+    writer.write(response.as_bytes()).unwrap();
 
 }
 
