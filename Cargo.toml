@@ -1,5 +1,5 @@
 [package]
-name = "web_server"
+name = "oxidized_web_server"
 version = "0.1.0"
 authors = ["nikhil <nikhofthehil@gmail.com>"]
 

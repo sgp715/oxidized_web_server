@@ -3,13 +3,17 @@
  */
 
 use std::thread;
-use std::sync::{Arc, Mutex}; 
+use std::sync::{Arc, Mutex};
 use std::net::{SocketAddr, TcpStream, TcpListener};
 use std::io::prelude::*;
 use std::fs::File;
 use std::fs::OpenOptions;
 
 extern crate time;
+
+use handle_request::parse_request;
+
+mod handle_request;
 
 fn main() {
 
@@ -29,11 +33,18 @@ fn main() {
                 thread::spawn(move || {
 
                     let results = handle_client(stream);
+                    match results {
+                        Ok(_) => println!("Generated response");,
+                        _ => continue
+                    };
+
+                    // figurue out how to send response
+                    response = results.2;
 
                     let mut file = mutex.lock().unwrap();
                     match *file {
                         Ok(ref mut f) => {
-                            log_request(f, results.0, results.1, results.2);
+                            log_request(f, results.0, results.1);
                         },
                         Err(_) => {
                             println!("Error writing to file");
@@ -48,7 +59,7 @@ fn main() {
     }
 }
 
-fn handle_client(mut stream: TcpStream) -> (SocketAddr, String, String) {
+fn handle_client(mut stream: TcpStream) -> Option<(SocketAddr, String, String)> {
 
     let mut buffer = String::new();
 
@@ -59,20 +70,25 @@ fn handle_client(mut stream: TcpStream) -> (SocketAddr, String, String) {
         Err(_) => {
             println!("Could not read TcpStream");
         },
+    }
 
+    // println!("Buffer: {}", buffer);
+    let (type, request) = parse_request(buffer);
+
+    match type {
+        400 =>  { return None },
+        _ =>    { println!("Valid request!") }
     }
 
     let remote_addr = stream.peer_addr().unwrap();
-    let requested_url = "[url]".to_owned();
-    let response = "[HTTP response]".to_owned();
 
-    (remote_addr, requested_url, response)
+    (remote_addr, "[request]".to_owned(), "[response]".to_owned())
 }
 
-fn log_request(mut file: &File, addr: SocketAddr, url: String, response: String) {
+fn log_request(mut file: &File, addr: SocketAddr, request: String) {
 
-    let entry = format!("Time: {}, Remote IP: {}, Requested URL: {}, Response: {}\n",
-                        time::now().ctime(), addr, url, response);
+    let entry = format!("Time: {}, Remote IP: {}, Request: {}\n",
+                        time::now().ctime(), addr, request);
 
     // Uncomment the following line to print log to stdout
     //println!("{}", entry);
