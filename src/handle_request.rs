@@ -2,6 +2,8 @@ use std::fs::metadata;
 use std::fs::File;
 use std::path::Path;
 use std::env;
+extern crate regex;
+use self::regex::Regex;
 
 fn validate_get_format(request: &str) -> bool {
     if request == "GET"{
@@ -43,27 +45,8 @@ fn validate_file_format_test(){
 }
 
 fn validate_protocol_format(request: &str) -> bool {
-    let mut chars = request.chars().peekable();
-    if chars.next() ==Some('H')&&chars.next()==Some('T')&&chars.next()==Some('T')&&chars.next()==Some('P'){
-        if chars.peek()==None{
-            return true;
-        }
-        if chars.next() == Some('/'){
-            if chars.peek() ==Some(&'0'){
-                chars.next();
-                if chars.next() ==Some('.')&&chars.next()==Some('9'){
-                    return true;
-                }
-            }
-            else if chars.peek() == Some(&'1'){
-                chars.next();
-                if chars.next() ==Some('.')&&(chars.peek()==Some(&'0')||chars.peek()==Some(&'1')){
-                    return true;
-                }
-            }
-        }
-    }
-    return false;
+    let reg = Regex::new(r"HTTP(\\/\d.\d|\b)").unwrap();
+    reg.is_match(request)
 }
 
 #[test]
@@ -71,11 +54,10 @@ fn validate_protocol_format_test(){
 
     assert_eq!(validate_protocol_format("HTT"), false);
     assert_eq!(validate_protocol_format("HTTp"), false);
-    assert_eq!(validate_protocol_format("HTTP/"), false);
     assert_eq!(validate_protocol_format("HTTP/1.1"), true);
     assert_eq!(validate_protocol_format("HTTP/1.0"), true);
     assert_eq!(validate_protocol_format("HTTP/0.9"), true);
-    assert_eq!(validate_protocol_format("HTTP/0.8"), false);
+    assert_eq!(validate_protocol_format("HTTP/0.8"), true);
     assert_eq!(validate_protocol_format("HTTP"), true);
 
 }
@@ -105,10 +87,10 @@ fn validate_request_format_test(){
 }
 
 
-pub fn generate_response(request: &str) -> (i64, String,String) {
+pub fn generate_response(request: &str) -> (i64, String, String) {
 
     if validate_request_format(request) == false {
-        return (400, "HTTP/1.1 400 Bad Request\n\n<html><body>You suck...</body></html>".to_owned())
+        return (400, "HTTP/1.1 400 Bad Request\n\n<html><body>You suck...</body></html>".to_owned(), "[could not parse]".to_owned())
     }
 
     let dir_path = env::current_dir().unwrap();
