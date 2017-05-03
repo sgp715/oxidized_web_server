@@ -126,7 +126,7 @@ pub fn generate_response(request: &str) -> (i64, String) {
             let size = f.read_to_string(&mut contents).unwrap();
 
             let mut text = "plain";
-            let html = ".html"
+            let html = ".html";
             // check the the extension is .html
 
             // how do you pick the servername???
