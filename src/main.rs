@@ -12,7 +12,6 @@ use std::fs::OpenOptions;
 
 extern crate time;
 
-use handle_request::parse_request;
 use handle_request::generate_response;
 
 mod handle_request;
@@ -78,8 +77,7 @@ fn handle_client(stream: &TcpStream) -> Option<(String)> {
     }
 
     // let remote_addr = stream.peer_addr().unwrap();
-    let request_type = parse_request(&request);
-    let response = generate_response(&request);
+    let (request_type, response) = generate_response(&request);
 
     let mut writer = BufWriter::new(stream);
     send_response(writer, &response);
