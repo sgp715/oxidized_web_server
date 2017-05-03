@@ -66,7 +66,7 @@ fn handle_client(stream: &TcpStream) -> Option<(String)> {
     let mut reader = BufReader::new(stream);
     let mut request = String::new();
 
-    reader.read_line(&mut request);
+    let _bytes_read = reader.read_line(&mut request);
 
     for line in reader.lines() {
 
@@ -79,7 +79,7 @@ fn handle_client(stream: &TcpStream) -> Option<(String)> {
     // let remote_addr = stream.peer_addr().unwrap();
     let (request_type, response) = generate_response(&request);
 
-    let mut writer = BufWriter::new(stream);
+    let writer = BufWriter::new(stream);
     send_response(writer, &response);
 
     if request_type == 400 {
@@ -98,7 +98,7 @@ fn send_response(mut writer: BufWriter<&TcpStream>, response: &str) {
 
 fn log_request(mut file: &File, addr: SocketAddr, request: String) {
 
-    let entry = format!("Time: {}, Remote IP: {}, Request: {}\n",
+    let entry = format!("Time: {}, Remote IP: {}, Request: {}",
                         time::now().ctime(), addr, request);
 
     // Uncomment the following line to print log to stdout
