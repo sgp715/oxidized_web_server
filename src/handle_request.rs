@@ -94,13 +94,11 @@ pub fn generate_response(request: &str) -> (i64, String, String) {
 
     let dir_path = env::current_dir().unwrap();
     let mut filename = dir_path.to_str().unwrap().to_owned() + request.split(' ').nth(1).unwrap();
-    println!("HERE");
     if Path::new(&filename).exists() {
-        println!("HERE1");
 
         let meta = fs::metadata(&filename).unwrap();
         let file_type = meta.file_type();
-        
+
         let mut file_served = filename.clone();
 
         if file_type.is_dir() {
@@ -119,6 +117,8 @@ pub fn generate_response(request: &str) -> (i64, String, String) {
             if Path::new(&filename_txt).exists() {
                 file_served = filename_txt;
             }
+
+            return (404, "HTTP/1.1 404 Not Found\n\n<html><body> Nope </body></html>".to_owned(), filename);
 
         }
 
